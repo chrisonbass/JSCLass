@@ -3,9 +3,35 @@
     "parentNamespace",
     "namespace",
     "className",
-    "addToGlobal",
-    "__static__"
+    "public",
+    "__static__",
+    "__constants__"
   ];
+  if (!Function.prototype.bind) {
+    Function.prototype.bind = function(oThis) {
+      if (typeof this !== 'function') {
+        // closest thing possible to the ECMAScript 5
+        // internal IsCallable function
+        throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable');
+      }
+
+      var aArgs   = Array.prototype.slice.call(arguments, 1),
+          fToBind = this,
+          fNOP    = function() {},
+          fBound  = function() {
+            return fToBind.apply(this instanceof fNOP && oThis
+                   ? this
+                   : oThis,
+                   aArgs.concat(Array.prototype.slice.call(arguments)));
+          };
+
+      fNOP.prototype = this.prototype;
+      fBound.prototype = new fNOP();
+
+      return fBound;
+    };
+  }
+
   function extend(target, source){
     var prop;
     target = target || {};
@@ -44,6 +70,28 @@
           }
       }
     }
+  }
+
+  // IE 8 Support
+  if ( String && String.prototype && !String.prototype.hasOwnProperty("trim") ){
+    String.prototype.trim =   function trim(){
+      return this.replace(/^[\s\r\t]+/,'').replace(/[\s\r\t]+$/,'');
+    };
+  }
+
+  // IE 8 Support
+  if ( Array && Array.prototype && !Array.prototype.hasOwnProperty("indexOf") ){
+    Array.prototype.indexOf = function indexOf(obj){
+      var index = -1,
+          i = 0;
+      for( i = 0; i < this.length; i++ ){
+        if ( obj === this[i] ){
+          index = i;
+          break;
+        }
+      }
+      return index;
+    };
   }
 
   function buildStaticMethods(func,def){
@@ -99,9 +147,13 @@
     var c = def.__constants__ || null;
     if ( c && func && typeof func === "function" ){
       each(c,function(name,value){
-        Object.defineProperty(func,name,{
-          "value" : value
-        });
+        try {
+          Object.defineProperty(func,name,{
+            "value" : value
+          });
+        } catch( e ){
+          func[name] = value;
+        }
       });
     }
   }
@@ -135,7 +187,7 @@
       _def = parent || {};
     }
     var _class = _def.className || null,
-        _global = _def.addToGlobal || false,
+        _global = _def.public || false,
         _construct = parseConstructor(_def),
         _namespace = _def.namespace || null,
         parentNamespace = null,
@@ -150,12 +202,6 @@
     if ( !_class ){
       throw "The provided definition is missing the required 'className' value.";
     }
-
-    /*
-    if ( _construct && typeof _construct === "function" ){
-      _construct = "this._constructor.apply(this,arguments);\n";
-    }
-    */
 
     if (_parent && typeof _parent === "string" ){
       parentNamespace = _parent.split(/\./);
@@ -173,24 +219,36 @@
       } else {
         throw "Could not find " + _parent + " in global scope";
       }
-    } else if ( typeof _parent !== "function" ) {
+    } 
+    else if ( typeof _parent !== "function" ) {
       _parent = null;
     }
 
-    var main = function(){
-      if ( _parent ){
-        _parent.apply(this,arguments);
+    if ( _parent && !parentNamespace ){
+      parentNamespace = _def.parentNamespace || "";
+      parentNamespace = parentNamespace.replace(/\.$/,'');
+      parentNamespace += "." + _parent.name;
+    }
+
+    var funcBody = "";
+    if ( _parent ){
+      funcBody = parentNamespace + ".apply(this,arguments); \n"; 
+    } 
+    if ( _construct && typeof _construct === "function" ){
+      if ( !_parent || (_parent && typeof _parent.prototype._constructor !== "function")){
+        funcBody += "this._constructor(arguments); \n";
+      } else {
+        funcBody += "";
       } 
-      if ( _construct && typeof _construct === "function" ){
-        if ( _parent && typeof _parent.prototype._constructor === "function"){
-          return;
-        }
-        this._constructor(arguments);
-      }
-    };
-    buildMethods(main,_def,_parent);
-    buildStaticMethods(main,_def);
-    buildConstants(main,_def);
+    }
+    var funcString = "return function " + _class + "(){ " + 
+      funcBody + 
+    "};";
+    var ClassDef = new Function(funcString)();
+
+    buildMethods(ClassDef,_def,_parent);
+    buildStaticMethods(ClassDef,_def);
+    buildConstants(ClassDef,_def);
     if ( _global ){
       if ( _namespace ){
         var ns = _namespace.trim().replace(/\.$/,'').split(/\./g),
@@ -203,15 +261,16 @@
             space = space[ns[i]];
           }
           if ( typeof space === "object" ){
-            space[_class] = main;
+            space[_class] = ClassDef;
           } else {
-            g[_class] = main;
+            g[_class] = ClassDef;
           }
         }
+      } else {
+        g[_class] = ClassDef;
       }
-      g[_class] = main;
     }
-    return main;
+    return ClassDef;
   }
 
   function uniqid(length,number_only){
@@ -220,12 +279,11 @@
       len = length || 10,
       result = "",
       i = 0;
-    if ( !length ){ length = 10; }
-    if ( number_only ){
-      for (i = len; i > 0; --i){ result += numbers[Math.round(Math.random() * (numbers.length - 1))]; }
+    if ( number_only === true ){
+      for (i = len; i > 0; --i){ result += numbers.charAt(Math.round(Math.random() * (numbers.length - 1))); }
     }
     else{
-      for (i = len; i > 0; --i){ result += chars[Math.round(Math.random() * (chars.length - 1))]; }
+      for (i = len; i > 0; --i){ result += chars.charAt(Math.round(Math.random() * (chars.length - 1))); }
     }
     return result;
   }
@@ -237,9 +295,6 @@
       "extend" : extend,
       "each" : each
     },
-
-    "tmp" : {},
-
-    "create" : create,
+    "create" : create
   };
 }(this));
