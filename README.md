@@ -8,6 +8,7 @@ Simply clone this repository into the directoy where you store the javascript fi
 ## Usage
 ```javascript
 // Create iife wrapper for the JSClass.create function
+// Create iife wrapper for the JSClass.create function
 (function($class){
   // Create simple class
   $class({
@@ -97,7 +98,7 @@ Simply clone this repository into the directoy where you store the javascript fi
   testBar.setName("test_object");
   console.log(testBar);
 
-}(JSCLass.create));
+}(JSClass.create));
 ```
 
 
