@@ -1,3 +1,6 @@
+/**
+ * Class Creator
+ */
 (function(g){
   var _excludeProperties = [
     "parentNamespace",
@@ -14,7 +17,6 @@
         // internal IsCallable function
         throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable');
       }
-
       var aArgs   = Array.prototype.slice.call(arguments, 1),
           fToBind = this,
           fNOP    = function() {},
@@ -94,13 +96,41 @@
     };
   }
 
-  function buildStaticMethods(func,def){
+  function buildStaticMethods(func,def,parent){
+    if ( !parent ){
+      parent = {};
+    }
+    var skip = [];
     var staticMethods = def.__static__ || null;
     if ( staticMethods && func && typeof func === "function" ){
       if ( staticMethods && typeof staticMethods === "object" ){
         each(staticMethods,function(method,methodDef){
-          func[method] = methodDef;
+          if ( parent.hasOwnProperty(method) && typeof parent[method] === "function" ){
+            skip.push(method);
+            func[method] = (function($super, m){
+              return function(){
+                [].unshift.call(arguments,$super);
+                return m.apply(null, arguments);
+              };
+            }(parent[method],methodDef));
+          } else {
+            func[method] = methodDef;
+          }
         });
+      }
+    }
+    for( var method in parent ){
+      if ( skip.indexOf(method) > -1 ){
+        continue;
+      }
+      if ( parent.hasOwnProperty(method) ){
+        if ( typeof parent[method] === "function" ){
+          func[method] = function(){
+            return parent[method].apply(null, arguments);
+          };
+        } else {
+          func[method] = parent[method];
+        }
       }
     }
   }
@@ -114,7 +144,6 @@
       extend(func.prototype, parent.prototype);
       hasParent = true;
     }
-    func.prototype.constructor = func;
     if ( func && methods && parent ){
       var v;
       each(methods,function(key,item){
@@ -159,16 +188,11 @@
   }
 
   function parseConstructor(def){
-    var _construct = def._constructor || null;
-    if ( 
-      _construct 
-      && typeof _construct === "string" 
-      && g[_construct] 
-      && typeof g[_construct] === "function" 
-    ){
-      _construct = g[_construct];     
+    var _constructor = def._constructor || null;
+    if ( typeof _constructor !== "function" ){
+      _constructor = null;
     }
-    return _construct;
+    return _constructor;
   }
 
   function create(parent, definition){
@@ -178,101 +202,38 @@
       if ( typeof parent === "function" ){
         _parent = parent;
       } 
-      else if ( typeof parent === "string" ){
-        _parent = parent;
-      }
       _def = definition || {};
     }
     else {
       _def = parent || {};
     }
-    var _class = _def.className || null,
-        _global = _def.public || false,
-        _construct = parseConstructor(_def),
-        _namespace = _def.namespace || null,
-        parentNamespace = null,
-        parentFunc = null,
-        i;
-    if ( _namespace && typeof _namespace === "string" ){
-      _global = true;
-    } else {
-      _namespace = null;
-    }
-    
-    if ( !_class ){
-      throw "The provided definition is missing the required 'className' value.";
-    }
+    var _constructor = parseConstructor(_def);
 
-    if (_parent && typeof _parent === "string" ){
-      parentNamespace = _parent.split(/\./);
-      parentFunc = null;
-      i = 0;
-      for( i = 0; i < parentNamespace.length; i++ ){
-        parentFunc = i > 0 ? (parentFunc[parentNamespace[i]] || null) : (g[parentNamespace[i]] || null );
-        if ( parentFunc === null ){
-          break;
-        }
-      }
-      if ( parentFunc ){
-        parentNamespace = _parent;
-        _parent = parentFunc;
-      } else {
-        throw "Could not find " + _parent + " in global scope";
-      }
-    } 
-    else if ( typeof _parent !== "function" ) {
+    if ( typeof _parent !== "function" ) {
       _parent = null;
     }
 
-    if ( _parent && !parentNamespace ){
-      parentNamespace = _def.parentNamespace || "";
-      parentNamespace = parentNamespace.replace(/\.$/,'');
-      parentNamespace += "." + _parent.name;
-    }
-
-    var funcBody = "";
-    if ( _parent ){
-      funcBody = parentNamespace + ".apply(this,arguments); \n"; 
-    } 
-    if ( _construct && typeof _construct === "function" ){
-      if ( !_parent || (_parent && typeof _parent.prototype._constructor !== "function")){
-        funcBody += "this._constructor(arguments); \n";
-      } else {
-        funcBody += "";
-      } 
-    }
-    var funcString = "return function " + _class + "(){ " + 
-      funcBody + 
-    "};";
-    var ClassDef = new Function(funcString)();
-
-    buildMethods(ClassDef,_def,_parent);
-    buildStaticMethods(ClassDef,_def);
-    buildConstants(ClassDef,_def);
-    if ( _global ){
-      if ( _namespace ){
-        var ns = _namespace.trim().replace(/\.$/,'').split(/\./g),
-            space = g;
-        if ( ns && ns.length ){
-          for( i = 0; i < ns.length; i++ ){
-            if ( !space[ns[i]] ){
-              space[ns[i]] = {};
-            } 
-            space = space[ns[i]];
-          }
-          if ( typeof space === "object" ){
-            space[_class] = ClassDef;
-          } else {
-            g[_class] = ClassDef;
+    var ClassDef = (function(){
+      return function(){
+        var callConstruct = true;
+        if ( _parent !== null ){
+          _parent.apply(this,arguments);
+          if ( _parent.prototype && _parent.prototype._constructor ){
+            callConstruct = false;
           }
         }
-      } else {
-        g[_class] = ClassDef;
-      }
-    }
+        if ( _constructor !== null && callConstruct ){
+          this._constructor.apply(this,arguments);
+        }
+      };
+    }());
+
+    buildMethods(ClassDef,_def,_parent);
+    buildStaticMethods(ClassDef,_def,_parent);
+    buildConstants(ClassDef,_def,_parent);
+
     return ClassDef;
   }
-
   function uniqid(length,number_only){
     var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
       numbers = '0123456789',
@@ -288,13 +249,14 @@
     return result;
   }
 
-  // Define JSClass Namespace
+  // Define tfc Namespace
   g.JSClass = {
     "util": {
       "uniqid" : uniqid,
       "extend" : extend,
       "each" : each
     },
+    "event" : {},
     "create" : create
   };
-}(this));
+}(window));

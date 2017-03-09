@@ -1,0 +1,60 @@
+<html>
+  <head>
+    <style>
+    </style>
+  </head>
+  <body>
+    <script src="JSClass.js"></script>
+    <script>
+      (function( $class ){
+        var Person = $class.create({
+          _constructor: function(name, age){
+            this.name = name || "No Name";
+            this.setAge(age);
+            this.type = "Person";
+          },
+          setAge: function(p_age){
+            if ( typeof p_age === "string" ){
+              p_age = p_age.replace(/[^\d]/g,'')
+              if ( p_age.match(/\d+/) ){
+                p_age = parseInt(p_age, 10);
+              } else {
+                p_age = 0;
+              }
+            }
+            this.age = p_age;
+          }, 
+          __static__: {
+            factory: function(name, age){
+              return new Person(name, age);
+            }
+          },
+          __constants__: {
+
+          }
+        } );
+        var Student = $class.create(Person,{
+          _constructor: function($super, name, age){
+            $super(name, age);
+            this.type = "Student";
+          },
+          __static__: {
+            factory: function($super, name, age){
+              console.log("Calling Parent State Method");
+              var ret = $super(name, age);
+              ret.type = "Factory Student";
+              return ret;
+            }
+          }
+        } );
+        console.dir(Student);
+        console.dir(Person.factory("Jim", "a34k"));
+        console.dir(Student.factory("Jim", "a34k"));
+        var steve = new Student("Chris", 23);
+
+        console.log(steve);
+
+      }(JSClass));
+    </script>
+  </body>
+<html>
