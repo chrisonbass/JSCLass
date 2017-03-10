@@ -7,6 +7,7 @@
  * @author Chris Moss
  */
 (function(g){
+
   var _excludeProperties = [
     "__static__",
     "__constants__"
@@ -158,7 +159,7 @@
           parent.prototype.hasOwnProperty(key) && 
           typeof item === "function" 
         ){ 
-          v = (function(method,methodFunction){
+          func.prototype[key] = (function(method,methodFunction){
             return function(){
               var $super = parent.prototype[method];
               if ( $super && typeof $super === "function" ){
@@ -167,7 +168,6 @@
               return methodFunction.apply(this,arguments);
             };
           }(key,item));
-          func.prototype[key] = v; 
         } else if ( typeof item === "function" ){
           func.prototype[key] = item;
         }
@@ -179,11 +179,13 @@
     var c = def.__constants__ || null;
     if ( c && func && typeof func === "function" ){
       each(c,function(name,value){
+        // Attempt to use Modern Method
         try {
           Object.defineProperty(func,name,{
             "value" : value
           });
         } catch( e ){
+          // On failure, assign value as static
           func[name] = value;
         }
       });
