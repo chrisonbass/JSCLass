@@ -8,10 +8,6 @@
  */
 (function(g){
   var _excludeProperties = [
-    "parentNamespace",
-    "namespace",
-    "className",
-    "public",
     "__static__",
     "__constants__"
   ];
@@ -264,8 +260,7 @@
       "extend" : extend,
       "each" : each
     },
-    "event" : {},
     "create" : create
   };
 
-}(window));
+}(this));
