@@ -1,5 +1,10 @@
 /**
- * Class Creator
+ * JSClass Easy Class Creator
+ * Simplifies OOP in Javascript by handling
+ * prototyping and inheritance while the developer
+ * can focus on functionality  
+ *
+ * @author Chris Moss
  */
 (function(g){
   var _excludeProperties = [
@@ -10,6 +15,8 @@
     "__static__",
     "__constants__"
   ];
+
+  // Older Browser bind support
   if (!Function.prototype.bind) {
     Function.prototype.bind = function(oThis) {
       if (typeof this !== 'function') {
@@ -195,6 +202,21 @@
     return _constructor;
   }
 
+  function uniqid(length,number_only){
+    var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
+      numbers = '0123456789',
+      len = length || 10,
+      result = "",
+      i = 0;
+    if ( number_only === true ){
+      for (i = len; i > 0; --i){ result += numbers.charAt(Math.round(Math.random() * (numbers.length - 1))); }
+    }
+    else{
+      for (i = len; i > 0; --i){ result += chars.charAt(Math.round(Math.random() * (chars.length - 1))); }
+    }
+    return result;
+  }
+
   function create(parent, definition){
     var _parent = null, 
         _def = {};
@@ -234,22 +256,8 @@
 
     return ClassDef;
   }
-  function uniqid(length,number_only){
-    var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-      numbers = '0123456789',
-      len = length || 10,
-      result = "",
-      i = 0;
-    if ( number_only === true ){
-      for (i = len; i > 0; --i){ result += numbers.charAt(Math.round(Math.random() * (numbers.length - 1))); }
-    }
-    else{
-      for (i = len; i > 0; --i){ result += chars.charAt(Math.round(Math.random() * (chars.length - 1))); }
-    }
-    return result;
-  }
 
-  // Define tfc Namespace
+  // Make JSClass Globally Accessible
   g.JSClass = {
     "util": {
       "uniqid" : uniqid,
@@ -259,4 +267,5 @@
     "event" : {},
     "create" : create
   };
+
 }(window));
