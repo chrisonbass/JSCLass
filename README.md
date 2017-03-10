@@ -12,7 +12,8 @@ Simply clone this repository into the directoy where you store the javascript fi
   // Create simple class
   var Foo = $class({
     /**
-     * Constructor Method.  The method is called as soon as the object is created
+     * Constructor Method.  The method is called as 
+     * soon as the object is created
      */
     "_constructor" : function(){
       // Do stuff
@@ -20,7 +21,8 @@ Simply clone this repository into the directoy where you store the javascript fi
     },
 
     /**
-     * Standard method will be publicly available in the class functions prototype
+     * Standard method will be publicly available in 
+     * the class functions prototype
      */  
     "setName" : function(p_name){
       this.name = p_name;
@@ -28,17 +30,18 @@ Simply clone this repository into the directoy where you store the javascript fi
     },
 
     /**
-     * Create Class or Static Methods that are accessible without the need to create an object
+     * Create Class or Static Methods that are 
+     * accessible without the need to create an object
      */
     "__static__" : {
       "factoryGet" : function(){
         return new Foo();
       }
     },
+
     /** 
-     * Creates constants for the class.  On modern browsers, these definitions will
-     * be read-only.  Older browser don't have the Object.defineProperty method so
-     * JSClass creates a static property that is writeable
+     * Creates constants for the class.  In modern 
+     * browsers, these definitions will be read-only.  
      */
      "__constants__" : {
         "FOO_CONSTANT" : 1
@@ -46,15 +49,12 @@ Simply clone this repository into the directoy where you store the javascript fi
   });
 
   /**
-   * To extend a class, simple use the parents class name
-   * If the parent class has a namespace, you must enter the 
-   * full namespace for the parent class.
-   * The class below doesn't use the 'public' or 'namespace'
-   * parameter, so you need to assign this private class to 
-   * a variable.
+   * To extend a class, simple pass the parent class 
+   * definition as the first parameter and the sub-
+   * class's definition as an object in the 2nd parameter
    */
   var Bar = $class(Foo, {
-    /*
+    /**
      * This subclass has it's own _constructor method, so 
      * JSClass will automatically pass the Parents _constructor
      * method as the first parameter of the sub-classes method
