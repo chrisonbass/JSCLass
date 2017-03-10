@@ -10,19 +10,7 @@ Simply clone this repository into the directoy where you store the javascript fi
 // Create iife wrapper for the JSClass.create function
 (function($class){
   // Create simple class
-  $class({
-    "className" : "Foo", // Required Name for new Class
-
-    "public" : true, // Optional: places the class in the global space (Default: false)
-
-    /**
-     * Optional : Namespace creates a public class definition with this namespace
-     * This example would be available at com.oxxmossxxo.Foo or var foo = new com.oxxmossxxo.Foo();
-     * when the namespace parameter is used, the class will automatically be public, so the
-     * 'public' parameter is not necessary when using namespace
-     */
-    "namespace" : "com.oxxmossxxo", 
-
+  var Foo = $class({
     /**
      * Constructor Method.  The method is called as soon as the object is created
      */
@@ -65,8 +53,7 @@ Simply clone this repository into the directoy where you store the javascript fi
    * parameter, so you need to assign this private class to 
    * a variable.
    */
-  var Bar = $class("com.oxxmossxxo.Foo",{
-    "className" : "Bar",
+  var Bar = $class(Foo, {
     /*
      * This subclass has it's own _constructor method, so 
      * JSClass will automatically pass the Parents _constructor
@@ -95,11 +82,11 @@ Simply clone this repository into the directoy where you store the javascript fi
   // Create instance of Bar
   var testBar = new Bar();
   testBar.setName("test_object");
-  console.log(testBar);
+  console.log(testBar.name);
+  // Outputs "test_object_bar"
 
 }(JSClass.create));
 ```
-
 
 ## Contributing
 

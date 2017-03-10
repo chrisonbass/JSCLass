@@ -4,6 +4,7 @@
     </style>
   </head>
   <body>
+    <p>See console</p>
     <script src="JSClass.js"></script>
     <script>
       (function( $class ){
@@ -13,6 +14,10 @@
             this.setAge(age);
             this.type = "Person";
           },
+
+          /**
+           * Standard Instance Method
+           */
           setAge: function(p_age){
             if ( typeof p_age === "string" ){
               p_age = p_age.replace(/[^\d]/g,'')
@@ -24,15 +29,24 @@
             }
             this.age = p_age;
           }, 
+
+          /**
+           * Class Methods/Properties
+           */
           __static__: {
             factory: function(name, age){
               return new Person(name, age);
             }
           },
+
+          /**
+           * Constants 
+           */
           __constants__: {
 
           }
         } );
+
         var Student = $class.create(Person,{
           _constructor: function($super, name, age){
             $super(name, age);
@@ -47,12 +61,11 @@
             }
           }
         } );
-        console.dir(Student);
-        console.dir(Person.factory("Jim", "a34k"));
-        console.dir(Student.factory("Jim", "a34k"));
         var steve = new Student("Chris", 23);
 
         console.log(steve);
+        console.log(steve.name);
+        console.log(steve.age);
 
       }(JSClass));
     </script>
