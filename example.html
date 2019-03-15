@@ -8,8 +8,36 @@
     <script src="JSClass.js"></script>
     <script>
       (function( $class ){
-        var Person = $class.create({
-          _constructor: function(name, age){
+        var Model = $class.create({
+          _constructor: function(){
+            this.errors = {};
+          },
+          hasError: function(){
+            return Object.keys(this.errors).length > 0 ? true : false;
+          },
+          addError: function(field, errorMessage){
+            this.errors[field] = errorMessage;
+          },
+          getErrors: function(){
+            return this.errors;
+          },
+          getError: function(field){
+            if ( this.errors && this.errors[field] ){
+              return this.errors[field];
+            }
+            return null;
+          },
+          validate: function(field){
+            if ( this.hasOwnProperty(field) ){
+              return true;
+            }
+            return false;
+          }
+        });
+
+        var Person = $class.create(Model, {
+          _constructor: function($super, name, age){
+            $super();
             this.name = name || "No Name";
             this.setAge(age);
             this.type = "Person";
@@ -52,20 +80,36 @@
             $super(name, age);
             this.type = "Student";
           },
+          setAge: function($super, p_age){
+            $super(p_age);
+            if ( parseInt(this.age,10) < 5 ){
+              this.addError("age", "Student must be at lease 5");
+            }
+          },
           __static__: {
             factory: function($super, name, age){
-              console.log("Calling Parent State Method");
               var ret = $super(name, age);
               ret.type = "Factory Student";
               return ret;
             }
           }
         } );
-        var steve = new Student("Chris", 23);
 
-        console.log(steve);
-        console.log(steve.name);
-        console.log(steve.age);
+        var steve = new Student("Chris", 23);
+        steve.setAge(4);
+
+        console.dir(Model);
+        console.dir(Person);
+        console.dir(Student);
+        console.log("Name: " +steve.name);
+        console.log("Age : " + steve.age);
+        console.log("Instance of Model  : " + ( steve instanceof Model ));
+        console.log("Instance of Person : " + ( steve instanceof Person ));
+        console.log("Instance of Student: " + ( steve instanceof Student ));
+        console.log("Has Errors: " + steve.hasError());
+        console.log("Errors: ");
+        console.log(steve.getErrors());
+        console.log(steve.validate('age'));
 
       }(JSClass));
     </script>

@@ -13,31 +13,6 @@
     "__constants__"
   ];
 
-  // Older Browser bind support
-  if (!Function.prototype.bind) {
-    Function.prototype.bind = function(oThis) {
-      if (typeof this !== 'function') {
-        // closest thing possible to the ECMAScript 5
-        // internal IsCallable function
-        throw new TypeError('Function.prototype.bind - what is trying to be bound is not callable');
-      }
-      var aArgs   = Array.prototype.slice.call(arguments, 1),
-          fToBind = this,
-          fNOP    = function() {},
-          fBound  = function() {
-            return fToBind.apply(this instanceof fNOP && oThis
-                   ? this
-                   : oThis,
-                   aArgs.concat(Array.prototype.slice.call(arguments)));
-          };
-
-      fNOP.prototype = this.prototype;
-      fBound.prototype = new fNOP();
-
-      return fBound;
-    };
-  }
-
   function extend(target, source){
     var prop;
     target = target || {};
@@ -76,28 +51,6 @@
           }
       }
     }
-  }
-
-  // IE 8 Support
-  if ( String && String.prototype && !String.prototype.hasOwnProperty("trim") ){
-    String.prototype.trim =   function trim(){
-      return this.replace(/^[\s\r\t]+/,'').replace(/[\s\r\t]+$/,'');
-    };
-  }
-
-  // IE 8 Support
-  if ( Array && Array.prototype && !Array.prototype.hasOwnProperty("indexOf") ){
-    Array.prototype.indexOf = function indexOf(obj){
-      var index = -1,
-          i = 0;
-      for( i = 0; i < this.length; i++ ){
-        if ( obj === this[i] ){
-          index = i;
-          break;
-        }
-      }
-      return index;
-    };
   }
 
   function buildStaticMethods(func,def,parent){
@@ -145,7 +98,7 @@
     }
     var hasParent = false;
     if (typeof parent === "function") {
-      extend(func.prototype, parent.prototype);
+      func.prototype = Object.create(parent.prototype);
       hasParent = true;
     }
     if ( func && methods && parent ){
@@ -200,21 +153,6 @@
     return _constructor;
   }
 
-  function uniqid(length,number_only){
-    var chars = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',
-      numbers = '0123456789',
-      len = length || 10,
-      result = "",
-      i = 0;
-    if ( number_only === true ){
-      for (i = len; i > 0; --i){ result += numbers.charAt(Math.round(Math.random() * (numbers.length - 1))); }
-    }
-    else{
-      for (i = len; i > 0; --i){ result += chars.charAt(Math.round(Math.random() * (chars.length - 1))); }
-    }
-    return result;
-  }
-
   function create(parent, definition){
     var _parent = null, 
         _def = {};
@@ -258,7 +196,6 @@
   // Make JSClass Globally Accessible
   g.JSClass = {
     "util": {
-      "uniqid" : uniqid,
       "extend" : extend,
       "each" : each
     },
